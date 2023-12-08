@@ -3,28 +3,33 @@ import ContactList from './ContactList/ContactList';
 import Filter from './Filter/Filter';
 import css from './App.module.css';
 import { nanoid } from 'nanoid';
-import { useEffect, useState } from 'react';
+import { useDispatch, useSelector } from 'react-redux';
+import { getContacts, getFilter } from 'redux/selectors';
+import { addContact, removeContact } from 'redux/contactSlise';
+
+
 
 
 export default function App() {
-
-// const initialState = {
-//   contacts: [],
-//   filter: '',
-// };
+  const dispatch = useDispatch();
+  const contacts = useSelector(getContacts);
+   const filter = useSelector(getFilter);
 
 
-  const [contacts, setContacts] = useState(
-    () => JSON.parse(localStorage.getItem('contacts')) ?? []
-  );
+  function onRemoveContact(contactId) {
+        dispatch(removeContact(contactId));
+  }
 
-  const [filter, setFilter] = useState('');
+  
+  function getFilterContacts() {
+    return contacts.filter(contact =>
+      contact.name.toLowerCase().includes(filter.toLowerCase())
+    );
+  }
 
-  useEffect(() => {
-    const stringifiedContacts = JSON.stringify(contacts);
-    window.localStorage.setItem('contacts', stringifiedContacts);
-  }, [contacts]);
+  const filteredContacts = getFilterContacts();
 
+  
   function isFound(name) {
     const findName = name.trim().toLowerCase();
     return contacts.some(item => item.name.toLowerCase() === findName);
@@ -40,23 +45,7 @@ export default function App() {
       ...data,
       id: nanoid(),
     };
-
-    setContacts(prevContacts => [newContact, ...prevContacts]);
-  }
-
-  function onRemoveContact(contactId) {
-    setContacts(contacts.filter(contact => contact.id !== contactId));
-  }
-
-  function onFilterContact(event) {
-    setFilter(event.target.value);
-  }
-  function getOneContact() {
-    const normalizeValue = filter.toLowerCase();
-
-    return contacts.filter(item =>
-      item.name.toLowerCase().includes(normalizeValue)
-    );
+    dispatch(addContact(newContact));
   }
 
   return (
@@ -64,12 +53,12 @@ export default function App() {
       <Phonebook addContact={formSubmitHandler} />
       <h2 className={css.title}>Contacts</h2>
 
-      <Filter onFilterData={filter} onFilterContact={onFilterContact} />
+      <Filter />
 
       {contacts.length > 0 && (
         <ContactList
           removeContact={onRemoveContact}
-          contacts={getOneContact()}
+          contacts={filteredContacts}
         />
       )}
     </div>
